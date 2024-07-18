@@ -1,0 +1,243 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: sampletld Serverless RESTful API.
+
+Globals:
+  Function:
+    Runtime: "nodejs20.x"
+    Timeout: 10
+
+Parameters:
+  Route53HostedZoneId:
+    Type: String
+    Default: "Z097253211NO4P1GNIBTM"
+  Environment:
+    Type: String
+    Default: "Staging"
+    AllowedValues:
+      - "Staging"
+      - "Production"
+
+Conditions:
+  IsProduction: !Equals [ !Ref Environment, "Production" ]
+
+Resources:
+  Domain:
+    Type: AWS::ApiGatewayV2::DomainName
+    Properties:
+      DomainName: !If [IsProduction, "api.sample.tld", "api-stg.sample.tld"]
+      DomainNameConfigurations:
+        - EndpointType: REGIONAL
+          CertificateArn: "arn:aws:acm:us-east-1:471112723690:certificate/e1e0e8f0-1c1a-42d7-9eae-ea19d2d77848"
+
+  Route53RecordSet:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      HostedZoneId: !Ref Route53HostedZoneId
+      Name: !If [IsProduction, "api.sample.tld.", "api-stg.sample.tld."]
+      Type: A
+      AliasTarget:
+        DNSName: !GetAtt Domain.RegionalDomainName
+        HostedZoneId: !GetAtt Domain.RegionalHostedZoneId
+
+  APIGateway:
+    Type: AWS::Serverless::HttpApi
+    Properties:
+      Name: "APIGateway"
+      Description: !Sub "RESTful API for sampletld ${Environment} usage."
+      StageName: !Ref Environment
+      DisableExecuteApiEndpoint: true
+      CorsConfiguration:
+        AllowOrigins:
+          - "*"
+        AllowHeaders:
+          - "*"
+        AllowMethods:
+          - GET
+          - POST
+#      Auth:
+#        DefaultAuthorizer: NONE
+#        AllowCredentials: true # Uncomment only if you choose a specific origin instead of the * wildcard
+
+  ApiMapping:
+    Type: AWS::ApiGatewayV2::ApiMapping
+    Properties:
+      ApiId: !Ref APIGateway
+      ApiMappingKey: ""
+      DomainName: !Ref Domain
+      Stage: !Ref Environment
+
+  SQSQueue:
+    Type: AWS::SQS::Queue
+    DependsOn: APIGateway
+
+  StripeLambdaLayer:
+    Type: AWS::Serverless::LayerVersion
+    Properties:
+      LayerName: StripeNodeSDK
+      Description: Stripe Node.js SDK
+      ContentUri: stripe/
+      CompatibleRuntimes:
+        - nodejs20.x
+      RetentionPolicy: "Delete"
+
+  FindLocationsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "FindLocationsFunction-${Environment}"
+      AutoPublishAlias: "latest"
+      Handler: locations.findLocationsHandler
+      CodeUri: handlers/
+      Role: "arn:aws:iam::471112723690:role/sampletld-lambda-role"
+      Events:
+        FindLocationsEvent:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref APIGateway
+            Method: GET
+            Path: /locations
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        EntryPoints:
+          - locations.ts
+        External:
+          - "@aws-sdk/*"
+          - aws-sdk
+        Minify: true
+
+  GetPropertyFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "GetPropertyFunction-${Environment}"
+      AutoPublishAlias: "latest"
+      Handler: properties.getPropertyHandler
+      CodeUri: handlers/
+      Role: "arn:aws:iam::471112723690:role/sampletld-lambda-role"
+      Events:
+        GetPropertyEvent:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref APIGateway
+            Method: GET
+            Path: /properties
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        EntryPoints:
+          - properties.ts
+        External:
+          - "@aws-sdk/*"
+          - aws-sdk
+        Minify: true
+
+  MessagesFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "MessagesFunction-${Environment}"
+      AutoPublishAlias: "latest"
+      Handler: messages.handler
+      CodeUri: handlers/
+      Role: "arn:aws:iam::471112723690:role/sampletld-lambda-role"
+      Events:
+        ValidateEmailEvent:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref APIGateway
+            Method: GET
+            Path: /messages
+        SendMessageEvent:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref APIGateway
+            Method: POST
+            Path: /messages
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        EntryPoints:
+          - messages.ts
+        External:
+          - "@aws-sdk/*"
+          - aws-sdk
+        Minify: true
+
+  PostAppointmentsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "PostAppointmentsFunction-${Environment}"
+      AutoPublishAlias: "latest"
+      Handler: appointments.postAppointmentsHandler
+      CodeUri: handlers/
+      Role: "arn:aws:iam::471112723690:role/sampletld-lambda-role"
+      Events:
+        PostAppointmentsEvent:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref APIGateway
+            Method: POST
+            Path: /appointments
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        EntryPoints:
+          - appointments.ts
+        External:
+          - "@aws-sdk/*"
+          - aws-sdk
+#          - googleapis # TODO use lambda layer
+        Minify: true
+
+  GetGoogleReviewsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "GetGoogleReviewsFunction-${Environment}"
+      AutoPublishAlias: "latest"
+      Handler: reviews.getGoogleReviewsHandler
+      CodeUri: handlers/
+      Role: "arn:aws:iam::471112723690:role/sampletld-lambda-role"
+      Events:
+        GetGoogleReviewsEvent:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref APIGateway
+            Method: GET
+            Path: /reviews
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        EntryPoints:
+          - reviews.ts
+        External:
+          - "@aws-sdk/*"
+          - aws-sdk
+#          - googleapis # TODO use lambda layer
+        Minify: true
+
+  PostOrdersFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "PostOrdersFunction-${Environment}"
+      AutoPublishAlias: "latest"
+      Handler: orders.postOrdersHandler
+      CodeUri: handlers/
+      Role: "arn:aws:iam::471112723690:role/sampletld-lambda-role"
+      Layers:
+        - !Ref StripeLambdaLayer
+      Events:
+        PostOrdersEvent:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref APIGateway
+            Method: POST
+            Path: /orders
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        EntryPoints:
+          - orders.ts
+        External:
+          - "@aws-sdk/*"
+          - aws-sdk
+          - stripe
+        Minify: true

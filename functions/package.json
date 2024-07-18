@@ -1,0 +1,21 @@
+{
+  "name": "sampletld-api",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "license": "LICENSE",
+  "engines": {
+    "node": ">=20.10"
+  },
+  "dependencies": {
+    "@aws-sdk/client-ses": "^3.614.0",
+    "@aws-sdk/client-sqs": "^3.614.0",
+    "deep-email-validator": "^0.1.21",
+    "googleapis": "^140.0.1"
+  },
+  "devDependencies": {
+    "@types/aws-lambda": "^8.10.141",
+    "@types/node": "^20.14.10",
+    "esbuild": "^0.23.0"
+  }
+}

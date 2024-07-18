@@ -1,0 +1,20 @@
+{
+  "routeKey": "POST /appointments",
+  "headers": {
+    "accept": "*/*",
+    "host": "api-stg.sample.tld",
+    "origin": "https://stg.sample.tld",
+    "referer": "https://stg.sample.tld",
+    "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4.1 Safari/605.1.15"
+  },
+  "requestContext": {
+    "http": {
+      "method": "POST",
+      "sourceIp": "192.168.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4.1 Safari/605.1.15"
+    },
+    "routeKey": "POST /appointments",
+    "stage": "Staging"
+  },
+  "body": "{\"summary\":\"sampletld event\",\"description\":\"Address: \\n\\nName: Test User\\n\\nEmail: test@email.tld\\n\\nPhone: +1 (000) 000-0000\\n\\nAppraisal Service: Estate\\n\\nAdditional Services: 2D & 3D Floor Plans\\n\\nCompany: Test Company, LLC\\n\\nAdditional Notes: Test additional notes\\n\\nCity, State, Zip: Rochelle Park, NJ, 07662\\n\\n\",\"startDateTime\":\"2024-05-10T06:30:00.000Z\",\"endDateTime\":\"2024-05-10T07:00:00.000Z\",\"name\":\"Test User\",\"email\":\"test@email.tld\",\"timeZone\":\"America/New_York\"}"
+}

@@ -1,0 +1,78 @@
+name: Staging CI
+
+on:
+  push:
+    branches:
+      - dev
+    paths-ignore:
+      - .editorconfig
+      - .gitignore
+      - .prettierrc.json
+      - README.md
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      stage:
+        description: Select deployment target
+        type: choice
+        options:
+          - 'staging'
+        default: 'staging'
+        required: true
+      functions:
+        description: 'Run deploy-lambda for functions folder changes'
+        required: true
+        default: 'false'
+
+env:
+  NODE_VERSION: '20.10'
+
+permissions:
+  pull-requests: write
+  id-token: write
+  contents: read
+
+jobs:
+  deploy-lambda:
+    name: Deploy Lambda
+#    if: startsWith(github.event_paths, 'functions/') || (github.event_name == 'workflow_dispatch' && github.event.inputs.functions == 'true')
+    runs-on: ubuntu-latest
+    concurrency:
+      group: staging-lambda
+      cancel-in-progress: true
+    environment:
+      name: staging
+      url: https://api-stg.sample.tld
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Setup AWS SAM CLI
+        uses: aws-actions/setup-sam@v2
+        with:
+          use-installer: true
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::471112723690:role/ci-role
+          aws-region: us-east-1
+
+      - name: Deploy
+        env:
+          SAM_CLI_TELEMETRY: 0
+        run: |
+          cd functions/
+          echo '${{ secrets.GOOGLE_SERVICE_ACCOUNT }}' | sed 's/\\n/\\\\n/g' > serviceAccount.json
+          pnpm install && pnpm add -g esbuild
+          sam build --config-env staging
+          sam validate --config-env staging
+          sam deploy --config-env staging --no-confirm-changeset --no-fail-on-empty-changeset

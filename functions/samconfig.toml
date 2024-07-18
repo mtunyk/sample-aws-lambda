@@ -1,0 +1,35 @@
+version = 0.1
+
+disable_rollback = true
+
+##
+# Staging
+##
+
+[staging.validate.parameters]
+lint = true
+
+[staging.deploy.parameters]
+stack_name = "sampletld-api-stg"
+s3_prefix = "staging"
+s3_bucket = "sampletld-api-cloudformation"
+region = "us-east-1"
+capabilities = "CAPABILITY_IAM"
+parameter_overrides = ["DomainName='api-stg.sample.tld'", "Environment='Staging'"]
+tags = ["prj=sampletld", "env=staging"]
+
+##
+# Production
+##
+
+[production.validate.parameters]
+lint = true
+
+[production.deploy.parameters]
+stack_name = "sampletld-api"
+s3_prefix = "production"
+s3_bucket = "sampletld-api-cloudformation"
+region = "us-east-1"
+capabilities = "CAPABILITY_IAM"
+parameter_overrides = ["DomainName='api.sample.tld'", "Environment='Production'"]
+tags = ["prj=sampletld", "env=production"]

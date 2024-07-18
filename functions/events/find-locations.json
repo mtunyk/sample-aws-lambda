@@ -1,0 +1,24 @@
+{
+  "routeKey": "GET /locations",
+  "rawQueryString": "q=Njbtco",
+  "headers": {
+    "accept": "*/*",
+    "host": "api-stg.sample.tld",
+    "origin": "https://stg.sample.tld",
+    "referer": "https://stg.sample.tld",
+    "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4.1 Safari/605.1.15"
+  },
+  "queryStringParameters": {
+    "q": "Njbtco"
+  },
+  "requestContext": {
+    "http": {
+      "method": "GET",
+      "protocol": "HTTP/1.1",
+      "sourceIp": "192.168.0.1",
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4.1 Safari/605.1.15"
+    },
+    "routeKey": "GET /locations",
+    "stage": "Staging"
+  }
+}

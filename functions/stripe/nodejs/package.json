@@ -1,0 +1,13 @@
+{
+  "name": "stripe-layer",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "license": "LICENSE",
+  "engines": {
+    "node": ">=20.10"
+  },
+  "dependencies": {
+    "stripe": "^16.2.0"
+  }
+}
